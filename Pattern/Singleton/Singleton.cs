@@ -39,7 +39,6 @@ namespace Pattern.Singleton
             {
                 Destroy(this.gameObject);
             }
-
         }
 
     }

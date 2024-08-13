@@ -43,7 +43,6 @@ namespace Pattern.Singleton
             {
                 Destroy(instance);
             }
-
         }
 
     }
