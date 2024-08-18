@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlayerAnimator : RyoMonoBehaviour
+public class testPlayerAnimator : RyoMonoBehaviour
 {
     public readonly float MIN_PARAMETER = -1f;
     public readonly float MAX_PARAMETER = 1f;
@@ -11,7 +11,7 @@ public class PlayerAnimator : RyoMonoBehaviour
     public event EventHandler<bool> OnPlayerAnimationChangeTrace;
 
     [SerializeField] private Animator _animator;
-    [SerializeField] private Player _player;
+    [SerializeField] private test_player _player;
 
     protected override void LoadComponents()
     {
@@ -21,10 +21,10 @@ public class PlayerAnimator : RyoMonoBehaviour
         {
             this._animator = GetComponent<Animator>();
         }
-        
+
         if (this._player == null)
         {
-            this._player = GetComponentInParent<Player>();
+            this._player = GetComponentInParent<test_player>();
         }
 
     }
@@ -36,7 +36,7 @@ public class PlayerAnimator : RyoMonoBehaviour
         this._player.OnTakeDamage += Player_OnTakeDamage;
     }
 
-    private void Player_OnTakeDamage(object sender, Player.TakeDamageEventArgs e)
+    private void Player_OnTakeDamage(object sender, test_player.TakeDamageEventArgs e)
     {
         if (e.IsDead)
         {
@@ -53,14 +53,14 @@ public class PlayerAnimator : RyoMonoBehaviour
         this.Update_IsMoving();
         this.Update_MovementParameter();
         this.Update_IsRequestingAttack();
-        
+
     }
 
     private void Update_IsMoving()
     {
         this._animator.SetBool(AnimationString.IS_MOVING_ANIM, this._player.GetIsWalking());
     }
-    
+
     private void Update_MovementParameter()
     {
         if (this._player.GetIsRunning())
@@ -72,12 +72,12 @@ public class PlayerAnimator : RyoMonoBehaviour
             this._animator.SetFloat(AnimationString.MOVEMENT_PARAMETER_ANIM, MIN_PARAMETER);
         }
     }
-    
+
     private void Update_IsRequestingAttack()
     {
         this._animator.SetBool(AnimationString.IS_REQUESTING_ATTACK_ANIM, this._player.GetIsRequestingAttack());
     }
-    
+
     public void HitTriggerAnimation(bool isForwardAttackDirection)
     {
         if (isForwardAttackDirection)
@@ -89,7 +89,7 @@ public class PlayerAnimator : RyoMonoBehaviour
             this._animator.SetTrigger(AnimationString.HIT_FORWARD_TRIGGER_ANIM);
         }
     }
-    
+
     public void DeathTriggerAnimation(bool isForwardAttackDirection)
     {
         if (isForwardAttackDirection)
@@ -102,17 +102,15 @@ public class PlayerAnimator : RyoMonoBehaviour
         }
     }
 
-
     // Animation Event
 
     public void AE_StartTrace()
     {
         OnPlayerAnimationChangeTrace?.Invoke(this, true);
     }
-    
+
     public void AE_EndTrace()
     {
         OnPlayerAnimationChangeTrace?.Invoke(this, false);
     }
-
 }

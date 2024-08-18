@@ -8,9 +8,8 @@ public class PlayerStats : ScriptableObject
 {
     [Header("Movement")]
     public float ReduceGravity = 0.2f;
-    public float Gravity = 60f;
+    public float Gravity = 40f;
     public LayerMask FloorLayer;
-
 
     [Header("Movement")]
     public float WalkSpeed = 100f;
@@ -22,5 +21,8 @@ public class PlayerStats : ScriptableObject
     public float SwordColliderRadius = 0.12f;
     public float Damage = 50;
     public float AttackForce = 400;
+
+    [Header("Health")]
+    public float MaxHealth = 100;
 
 }

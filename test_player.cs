@@ -1,11 +1,9 @@
-﻿using Pattern.Singleton;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-
-public class Player : Singleton<Player>, IAttackable, IDamageable
+public class test_player : RyoMonoBehaviour, IAttackable, IDamageable
 {
     public event EventHandler<TakeDamageEventArgs> OnTakeDamage;
 
@@ -13,19 +11,19 @@ public class Player : Singleton<Player>, IAttackable, IDamageable
     {
         public float Health;
         public float MaxHealth;
-        public bool IsDead;
         public bool IsForwardAttackDirection;
+        public bool IsDead;
     }
 
     [SerializeField] private PlayerStats _playerStats;
-    [SerializeField] private PlayerAnimator _playerAnimator;
+    [SerializeField] private testPlayerAnimator _playerAnimator;
 
     [SerializeField] private CapsuleCollider _capsuleCollider;
     [SerializeField] private Rigidbody _rigidbody;
 
     [Header("Check Is On Ground")]
     [SerializeField] private bool _isOnGround;
-    
+
     [Header("Movement")]
     [SerializeField] private bool _isWalking;
     [SerializeField] private bool _isRunning;
@@ -34,9 +32,9 @@ public class Player : Singleton<Player>, IAttackable, IDamageable
     [SerializeField] private bool _isRequestingAttack;
     [SerializeField] private bool _isAttacking;
     [SerializeField] private bool _isTracing;
+    [SerializeField] private EAttackType _attackType;
     [SerializeField] private Transform _startTrace;
     [SerializeField] private Transform _endTrace;
-    private EAttackType _attackType;
     private List<Collider> _collidersDidDamage = new List<Collider>();
 
     [Header("Health")]
@@ -55,20 +53,20 @@ public class Player : Singleton<Player>, IAttackable, IDamageable
             this._playerStats = Resources.Load<PlayerStats>(path);
         }
 
-        if (this._playerAnimator == null )
+        if (this._playerAnimator == null)
         {
-            this._playerAnimator = GetComponentInChildren<PlayerAnimator>();
+            this._playerAnimator = GetComponentInChildren<testPlayerAnimator>();
         }
-        
-        if (this._rigidbody == null )
+
+        if (this._rigidbody == null)
         {
             this._rigidbody = GetComponent<Rigidbody>();
 
             this._rigidbody.useGravity = false;
             this._rigidbody.freezeRotation = true;
         }
-        
-        if (this._capsuleCollider == null )
+
+        if (this._capsuleCollider == null)
         {
             this._capsuleCollider = GetComponent<CapsuleCollider>();
         }
@@ -82,23 +80,24 @@ public class Player : Singleton<Player>, IAttackable, IDamageable
         this._heath = this._playerStats.MaxHealth;
     }
 
-    protected override void Start()
-    {
-        base.Start();
+    //protected override void Start()
+    //{
+    //    base.Start();
 
-        GameInput.Instance.OnRunAction += GameInput_OnRunAction;
-        GameInput.Instance.OnAttackAction += GameInput_OnAttackAction;
+    //    GameInput.Instance.OnRunAction += GameInput_OnRunAction;
+    //    GameInput.Instance.OnAttackAction += GameInput_OnAttackAction;
 
-        this._playerAnimator.OnPlayerAnimationChangeTrace += PlayerAnimator_OnPlayerAnimationChangeTrace;
+    //    this._playerAnimator.OnPlayerAnimationChangeTrace += PlayerAnimator_OnPlayerAnimationChangeTrace;
 
-    }
+    //}
+
+
 
     private void Update()
     {
         this.GravityDecreasing();
 
-        this.HandleMovement();
-
+        // this.HandleMovement();
     }
 
     private void FixedUpdate()
@@ -210,6 +209,25 @@ public class Player : Singleton<Player>, IAttackable, IDamageable
         {
             this.transform.forward = Vector3.Slerp(this.transform.forward, moveDir, this._playerStats.RotationSpeed * Time.deltaTime);
         }
+    }
+
+    #endregion
+
+    #region Setter Gettter
+
+    public bool GetIsWalking()
+    {
+        return this._isWalking;
+    }
+
+    public bool GetIsRunning()
+    {
+        return this._isRunning;
+    }
+
+    public bool GetIsRequestingAttack()
+    {
+        return this._isRequestingAttack;
     }
 
     #endregion
@@ -329,7 +347,7 @@ public class Player : Singleton<Player>, IAttackable, IDamageable
             IsForwardAttackDirection = isForwardAttackDirection,
             IsDead = this._isDead
         });
-        
+
     }
 
     public void HandlePain(Vector3 attackDirection)
@@ -345,30 +363,9 @@ public class Player : Singleton<Player>, IAttackable, IDamageable
         this._isDead = true;
     }
 
+
+
     #endregion
 
-
-    /*
-     * 
-     */
-
-    #region Setter Gettter
-
-    public bool GetIsWalking()
-    {
-        return this._isWalking;
-    }
-
-    public bool GetIsRunning()
-    {
-        return this._isRunning;
-    }
-
-    public bool GetIsRequestingAttack()
-    {
-        return this._isRequestingAttack;
-    }
-
-    #endregion
 
 }

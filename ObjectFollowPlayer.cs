@@ -8,7 +8,9 @@ public class ObjectFollowPlayer : RyoMonoBehaviour
 
     private void FixedUpdate()
     {
-        this.transform.position = this._playerObject.transform.position;
+        Vector3 targetPos = this._playerObject.transform.position;
+        targetPos.y = 0;
+        this.transform.position = targetPos;
     }
 
 }
