@@ -7,6 +7,7 @@ public interface IAttackable
 {
     public abstract void RequestAttack();
     public abstract void StartAttack();
+    public abstract void NextAttack();
     public abstract void StartTrace();
     public abstract void Tracing();
     public abstract void EndTrace();

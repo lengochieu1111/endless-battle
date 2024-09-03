@@ -3,7 +3,14 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TEST_PLAYER : RyoMonoBehaviour, IAttackable, IDamageable
+[System.Serializable]
+public class TraceTracker
+{
+    public Transform StartTrace;
+    public Transform EndTrace;
+}
+
+ public class BasePlayer : RyoMonoBehaviour, IAttackable, IDamageable
 {
     public event EventHandler OnChangeDirection;
     public event EventHandler<string> OnAttack;
@@ -17,14 +24,14 @@ public class TEST_PLAYER : RyoMonoBehaviour, IAttackable, IDamageable
     }
 
     [SerializeField] protected PlayerStats _playerStats;
-    [SerializeField] protected TEST_PLAYERANIMATOR _playerAnimator;
+    [SerializeField] protected PlayerAnimator _playerAnimator;
 
     [SerializeField] protected CapsuleCollider _capsuleCollider;
     [SerializeField] protected Rigidbody _rigidbody;
 
     [Header("Check Is On Ground")]
     [SerializeField] protected bool _isOnGround;
-
+    
     [Header("Movement")]
     [SerializeField] protected bool _isWalking;
     [SerializeField] protected bool _isRunning;
@@ -58,20 +65,20 @@ public class TEST_PLAYER : RyoMonoBehaviour, IAttackable, IDamageable
             this._playerStats = Resources.Load<PlayerStats>(path);
         }
 
-        if (this._playerAnimator == null)
+        if (this._playerAnimator == null )
         {
-            this._playerAnimator = GetComponentInChildren<TEST_PLAYERANIMATOR>();
+            this._playerAnimator = GetComponentInChildren<PlayerAnimator>();
         }
-
-        if (this._rigidbody == null)
+        
+        if (this._rigidbody == null )
         {
             this._rigidbody = GetComponent<Rigidbody>();
 
             this._rigidbody.useGravity = false;
             this._rigidbody.freezeRotation = true;
         }
-
-        if (this._capsuleCollider == null)
+        
+        if (this._capsuleCollider == null )
         {
             this._capsuleCollider = GetComponent<CapsuleCollider>();
         }
@@ -89,12 +96,12 @@ public class TEST_PLAYER : RyoMonoBehaviour, IAttackable, IDamageable
     {
         base.Start();
 
-        //GameInput.Instance.OnRunAction += GameInput_OnRunAction;
-        //GameInput.Instance.OnAttackAction += GameInput_OnAttackAction; 
+        GameInput.Instance.OnRunAction += GameInput_OnRunAction;
+        GameInput.Instance.OnAttackAction += GameInput_OnAttackAction; ;
 
         this._playerAnimator.OnPlayerAnimationChangeTrace += PlayerAnimator_OnPlayerAnimationChangeTrace;
         this._playerAnimator.OnPlayerAnimationNextAttack += PlayerAnimator_OnPlayerAnimationNextAttack;
-        this._playerAnimator.OnPlayerAnimationEndAttack += PlayerAnimator_OnPlayerAnimationEndAttack;
+        this._playerAnimator.OnPlayerAnimationEndAttack += PlayerAnimator_OnPlayerAnimationEndAttack; ;
 
     }
 
@@ -103,7 +110,7 @@ public class TEST_PLAYER : RyoMonoBehaviour, IAttackable, IDamageable
     {
         this.GravityDecreasing();
 
-        // this.HandleMovement();
+        this.HandleMovement();
 
     }
 
@@ -177,7 +184,7 @@ public class TEST_PLAYER : RyoMonoBehaviour, IAttackable, IDamageable
 
         this._movementDirection = moveDir;
 
-        if (!Mathf.Approximately(this._movementDirection.x, this._previousMovementDirection.x)
+        if (!Mathf.Approximately(this._movementDirection.x, this._previousMovementDirection.x) 
             || !Mathf.Approximately(this._movementDirection.z, this._previousMovementDirection.z))
         {
             if (!this._hasNotified)
@@ -186,8 +193,6 @@ public class TEST_PLAYER : RyoMonoBehaviour, IAttackable, IDamageable
                 this._previousMovementDirection = this._movementDirection;
 
                 OnChangeDirection?.Invoke(this, EventArgs.Empty);
-
-                Debug.Log("Change Direction");
             }
         }
         else
@@ -400,7 +405,7 @@ public class TEST_PLAYER : RyoMonoBehaviour, IAttackable, IDamageable
             MaxHealth = this._playerStats.MaxHealth,
             DamageStateName = damageStateName
         });
-
+        
     }
 
     public void HandlePain(Vector3 attackDirection)
@@ -429,7 +434,7 @@ public class TEST_PLAYER : RyoMonoBehaviour, IAttackable, IDamageable
     {
         return this._isWalking;
     }
-
+    
     public bool GetIsRunning()
     {
         return this._isRunning;

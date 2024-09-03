@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -18,11 +19,15 @@ public class PlayerStats : ScriptableObject
 
     [Header("Attack")]
     public LayerMask PlayerLayer;
-    public float SwordColliderRadius = 0.12f;
+    public String[] AttackStateNameArray;
+    public float WeaponColliderRadius = 0.12f;
     public float Damage = 50;
     public float AttackForce = 400;
 
     [Header("Health")]
     public float MaxHealth = 100;
+    public String HitForwardStateName;
+    public String HitBackwardStateName;
+
 
 }

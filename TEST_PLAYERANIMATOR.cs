@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlayerAnimator : RyoMonoBehaviour
+public class TEST_PLAYERANIMATOR : RyoMonoBehaviour
 {
     public readonly float MIN_PARAMETER = 0f;
     public readonly float MIDDLE_PARAMETER = 1f;
@@ -14,7 +14,7 @@ public class PlayerAnimator : RyoMonoBehaviour
     public event EventHandler OnPlayerAnimationEndAttack;
 
     [SerializeField] private Animator _animator;
-    [SerializeField] private BasePlayer _player;
+    [SerializeField] private TEST_PLAYER _player;
     [SerializeField] private float _stateChangeTime = 0.1f;
     private float _changeTimer;
 
@@ -26,10 +26,10 @@ public class PlayerAnimator : RyoMonoBehaviour
         {
             this._animator = GetComponent<Animator>();
         }
-        
+
         if (this._player == null)
         {
-            this._player = GetComponentInParent<BasePlayer>();
+            this._player = GetComponentInParent<TEST_PLAYER>();
         }
 
     }
@@ -65,7 +65,7 @@ public class PlayerAnimator : RyoMonoBehaviour
         this.PlayAnimation(e, this._stateChangeTime);
     }
 
-    private void Player_OnTakeDamage(object sender, BasePlayer.TakeDamageEventArgs e)
+    private void Player_OnTakeDamage(object sender, TEST_PLAYER.TakeDamageEventArgs e)
     {
         this.PlayAnimation(e.DamageStateName, this._stateChangeTime);
     }
@@ -121,7 +121,7 @@ public class PlayerAnimator : RyoMonoBehaviour
     {
         OnPlayerAnimationChangeTrace?.Invoke(this, true);
     }
-    
+
     public void AE_EndTrace()
     {
         OnPlayerAnimationChangeTrace?.Invoke(this, false);
@@ -131,10 +131,11 @@ public class PlayerAnimator : RyoMonoBehaviour
     {
         OnPlayerAnimationNextAttack?.Invoke(this, EventArgs.Empty);
     }
-    
+
     public void AE_EndAttack()
     {
         OnPlayerAnimationEndAttack?.Invoke(this, EventArgs.Empty);
     }
 
 }
+
