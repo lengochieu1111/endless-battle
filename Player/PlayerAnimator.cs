@@ -1,9 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Architecture.MVC;
 using UnityEngine;
 
-public class PlayerAnimator : RyoMonoBehaviour
+public class PlayerAnimator : BaseView<BasePlayer>
 {
     public readonly float MIN_PARAMETER = 0f;
     public readonly float MIDDLE_PARAMETER = 1f;
@@ -89,10 +90,10 @@ public class PlayerAnimator : RyoMonoBehaviour
         float curernt_value = this._animator.GetFloat(AnimationString.MOVEMENT_PARAMETER_ANIM);
 
         float new_value = 0;
-        if (curernt_value != target_value && this._changeTimer <= this._stateChangeTime * 2)
+        if (curernt_value != target_value && this._changeTimer <= this._stateChangeTime * 4)
         {
             this._changeTimer += Time.deltaTime;
-            new_value = Mathf.Lerp(curernt_value, target_value, this._changeTimer / this._stateChangeTime * 2);
+            new_value = Mathf.Lerp(curernt_value, target_value, this._changeTimer / this._stateChangeTime * 4);
         }
         else
         {

@@ -1,6 +1,8 @@
-﻿using System;
+﻿using Pattern.Singleton;
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using Architecture.MVC;
 using UnityEngine;
 
 [System.Serializable]
@@ -10,7 +12,7 @@ public class TraceTracker
     public Transform EndTrace;
 }
 
- public class BasePlayer : RyoMonoBehaviour, IAttackable, IDamageable
+public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackable, IDamageable
 {
     public event EventHandler OnChangeDirection;
     public event EventHandler<string> OnAttack;
@@ -23,7 +25,7 @@ public class TraceTracker
         public string DamageStateName;
     }
 
-    [SerializeField] protected PlayerStats _playerStats;
+    [SerializeField] protected PlayerModel _playerModel;
     [SerializeField] protected PlayerAnimator _playerAnimator;
 
     [SerializeField] protected CapsuleCollider _capsuleCollider;
@@ -31,7 +33,7 @@ public class TraceTracker
 
     [Header("Check Is On Ground")]
     [SerializeField] protected bool _isOnGround;
-    
+
     [Header("Movement")]
     [SerializeField] protected bool _isWalking;
     [SerializeField] protected bool _isRunning;
@@ -59,26 +61,25 @@ public class TraceTracker
     {
         base.LoadComponents();
 
-        if (this._playerStats == null)
+        if (this._playerModel == null)
         {
-            string path = "PlayerStats/PlayerStats_" + this.transform.name;
-            this._playerStats = Resources.Load<PlayerStats>(path);
+            this._playerModel = GetComponentInChildren<PlayerModel>();
         }
 
-        if (this._playerAnimator == null )
+        if (this._playerAnimator == null)
         {
             this._playerAnimator = GetComponentInChildren<PlayerAnimator>();
         }
-        
-        if (this._rigidbody == null )
+
+        if (this._rigidbody == null)
         {
             this._rigidbody = GetComponent<Rigidbody>();
 
             this._rigidbody.useGravity = false;
             this._rigidbody.freezeRotation = true;
         }
-        
-        if (this._capsuleCollider == null )
+
+        if (this._capsuleCollider == null)
         {
             this._capsuleCollider = GetComponent<CapsuleCollider>();
         }
@@ -89,7 +90,9 @@ public class TraceTracker
     {
         base.SetupValues();
 
-        this._heath = this._playerStats.MaxHealth;
+        this._isOnGround = true;
+
+        this._heath = this._playerModel.PlayerStats.MaxHealth;
     }
 
     protected override void Start()
@@ -162,14 +165,14 @@ public class TraceTracker
         float bufferCheckDistance = 0.2f;
 
         RaycastHit hit;
-        this._isOnGround = Physics.Raycast(this.transform.position, -this.transform.up, out hit, bufferCheckDistance, this._playerStats.FloorLayer);
+        this._isOnGround = Physics.Raycast(this.transform.position, -this.transform.up, out hit, bufferCheckDistance, this._playerModel.PlayerStats.FloorLayer);
     }
 
     private void GravityDecreasing()
     {
         if (!this._isOnGround)
         {
-            this._rigidbody.AddForce(Physics.gravity * (this._playerStats.Gravity - this._playerStats.ReduceGravity) * this._rigidbody.mass);
+            this._rigidbody.AddForce(Physics.gravity * (this._playerModel.PlayerStats.Gravity - this._playerModel.PlayerStats.ReduceGravity) * this._rigidbody.mass);
         }
     }
 
@@ -184,7 +187,7 @@ public class TraceTracker
 
         this._movementDirection = moveDir;
 
-        if (!Mathf.Approximately(this._movementDirection.x, this._previousMovementDirection.x) 
+        if (!Mathf.Approximately(this._movementDirection.x, this._previousMovementDirection.x)
             || !Mathf.Approximately(this._movementDirection.z, this._previousMovementDirection.z))
         {
             if (!this._hasNotified)
@@ -200,7 +203,7 @@ public class TraceTracker
             this._hasNotified = false;
         }
 
-        float moveSpeed = this._isRunning ? this._playerStats.RunSpeed : this._playerStats.WalkSpeed;
+        float moveSpeed = this._isRunning ? this._playerModel.PlayerStats.RunSpeed : this._playerModel.PlayerStats.WalkSpeed;
 
         Vector3 point1 = this._capsuleCollider.bounds.center + Vector3.down * this._capsuleCollider.height / 2;
         Vector3 point2 = this._capsuleCollider.bounds.center + Vector3.up * this._capsuleCollider.height / 2;
@@ -250,7 +253,7 @@ public class TraceTracker
         // Rotate handling
         if (!this._isAttacking)
         {
-            this.transform.forward = Vector3.Slerp(this.transform.forward, moveDir, this._playerStats.RotationSpeed * Time.deltaTime);
+            this.transform.forward = Vector3.Slerp(this.transform.forward, moveDir, this._playerModel.PlayerStats.RotationSpeed * Time.deltaTime);
         }
     }
 
@@ -289,10 +292,10 @@ public class TraceTracker
 
     #region IAttackable
 
-    private void Attack()
+    public virtual void Attack()
     {
-        OnAttack?.Invoke(this, this._playerStats.AttackStateNameArray[this._attackIndex]);
-        this._attackIndex = (this._attackIndex + 1) % this._playerStats.AttackStateNameArray.Length;
+        OnAttack?.Invoke(this, this._playerModel.PlayerStats.AttackStateNameArray[this._attackIndex]);
+        this._attackIndex = (this._attackIndex + 1) % this._playerModel.PlayerStats.AttackStateNameArray.Length;
     }
 
     public virtual void RequestAttack()
@@ -336,7 +339,7 @@ public class TraceTracker
         {
             foreach (TraceTracker traceTracker in this._traceTracker)
             {
-                Collider[] hitColliders = Physics.OverlapCapsule(traceTracker.StartTrace.position, traceTracker.EndTrace.position, this._playerStats.WeaponColliderRadius, this._playerStats.PlayerLayer);
+                Collider[] hitColliders = Physics.OverlapCapsule(traceTracker.StartTrace.position, traceTracker.EndTrace.position, this._playerModel.PlayerStats.WeaponColliderRadius, this._playerModel.PlayerStats.PlayerLayer);
 
                 foreach (Collider collider in hitColliders)
                 {
@@ -349,7 +352,7 @@ public class TraceTracker
                         if (collider.TryGetComponent<IDamageable>(out IDamageable damageable))
                         {
                             Vector3 attackDirection = (collider.transform.position - this.transform.position).normalized;
-                            this.CauseDamage(damageable, attackDirection, this._playerStats.Damage);
+                            this.CauseDamage(damageable, attackDirection, this._playerModel.PlayerStats.Damage);
                             this._collidersDidDamage.Add(collider);
                         }
                     }
@@ -382,7 +385,7 @@ public class TraceTracker
 
     public void TakeDamage(IAttackable attackable, Vector3 attackDirection, float damage)
     {
-        this._heath = Math.Clamp(this._heath - damage, 0, this._playerStats.MaxHealth);
+        this._heath = Math.Clamp(this._heath - damage, 0, this._playerModel.PlayerStats.MaxHealth);
 
         this.HandlePain(attackDirection);
 
@@ -391,21 +394,21 @@ public class TraceTracker
             this.HandleDeath();
         }
 
-        string damageStateName = this._playerStats.HitForwardStateName;
+        string damageStateName = this._playerModel.PlayerStats.HitForwardStateName;
 
         bool isForwardAttackDirection = Vector3.Dot(attackDirection, this.transform.forward) >= 0;
         if (isForwardAttackDirection)
         {
-            damageStateName = this._playerStats.HitBackwardStateName;
+            damageStateName = this._playerModel.PlayerStats.HitBackwardStateName;
         }
 
         OnTakeDamage?.Invoke(this, new TakeDamageEventArgs
         {
             Health = this._heath,
-            MaxHealth = this._playerStats.MaxHealth,
+            MaxHealth = this._playerModel.PlayerStats.MaxHealth,
             DamageStateName = damageStateName
         });
-        
+
     }
 
     public void HandlePain(Vector3 attackDirection)
@@ -413,7 +416,7 @@ public class TraceTracker
         this._isPainning = true;
 
         attackDirection.y += 1;
-        this._rigidbody.AddForce(attackDirection * this._playerStats.AttackForce);
+        this._rigidbody.AddForce(attackDirection * this._playerModel.PlayerStats.AttackForce);
     }
 
     public void HandleDeath()
@@ -423,18 +426,13 @@ public class TraceTracker
 
     #endregion
 
-
-    /*
-     * 
-     */
-
     #region Setter Gettter
 
     public bool GetIsWalking()
     {
         return this._isWalking;
     }
-    
+
     public bool GetIsRunning()
     {
         return this._isRunning;

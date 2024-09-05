@@ -6,6 +6,7 @@ using UnityEngine;
 public interface IAttackable
 {
     public abstract void RequestAttack();
+    public abstract void Attack();
     public abstract void StartAttack();
     public abstract void NextAttack();
     public abstract void StartTrace();
