@@ -4,8 +4,10 @@ using UnityEngine;
 
 public interface IDamageable
 {
-    public abstract void TakeDamage(IAttackable attackable, Vector3 attackDirection, float damage);
-    public abstract void HandlePain(Vector3 attackDirection);
-    public abstract void HandleDeath();
+    public abstract bool TakeDamage(IAttackable attackable, Vector3 attackDirection, float damage);
+    public abstract void StartPain(Vector3 attackDirection);
+    public abstract void EndPain();
+    public abstract void StartDeath();
+    public abstract void EndDeath();
 
 }

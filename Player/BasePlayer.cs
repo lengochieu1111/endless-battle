@@ -25,6 +25,10 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
         public string DamageStateName;
     }
 
+    [Header("Game Input")]
+    [SerializeField] private GameInput _gameInput;
+
+    [Header("Components")]
     [SerializeField] protected PlayerModel _playerModel;
     [SerializeField] protected PlayerAnimator _playerAnimator;
 
@@ -99,15 +103,20 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
     {
         base.Start();
 
-        GameInput.Instance.OnRunAction += GameInput_OnRunAction;
-        GameInput.Instance.OnAttackAction += GameInput_OnAttackAction; ;
+        if (this._gameInput != null)
+        {
+            this._gameInput.OnRunAction += GameInput_OnRunAction;
+            this._gameInput.OnAttackAction += GameInput_OnAttackAction;
+        }
 
         this._playerAnimator.OnPlayerAnimationChangeTrace += PlayerAnimator_OnPlayerAnimationChangeTrace;
         this._playerAnimator.OnPlayerAnimationNextAttack += PlayerAnimator_OnPlayerAnimationNextAttack;
-        this._playerAnimator.OnPlayerAnimationEndAttack += PlayerAnimator_OnPlayerAnimationEndAttack; ;
+        this._playerAnimator.OnPlayerAnimationEndAttack += PlayerAnimator_OnPlayerAnimationEndAttack;
+
+        this._playerAnimator.OnPlayerAnimationEndPain += PlayerAnimator_OnPlayerAnimationEndPain;
+        this._playerAnimator.OnPlayerAnimationEndDeath += PlayerAnimator_OnPlayerAnimationEndDeath; ;
 
     }
-
 
     private void Update()
     {
@@ -156,6 +165,16 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
         this.EndAttack();
     }
 
+    private void PlayerAnimator_OnPlayerAnimationEndPain(object sender, EventArgs e)
+    {
+        this.EndPain();
+    }
+
+    private void PlayerAnimator_OnPlayerAnimationEndDeath(object sender, EventArgs e)
+    {
+        this.EndDeath();
+    }
+
     #endregion
 
     #region Check Is On Ground
@@ -182,7 +201,9 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
 
     private void HandleMovement()
     {
-        Vector2 moveInput = GameInput.Instance.GetMovementInputNormalize();
+        if (this._gameInput == null) return;
+
+        Vector2 moveInput = this._gameInput.GetMovementInputNormalize();
         Vector3 moveDir = new Vector3(moveInput.x, 0, moveInput.y);
 
         this._movementDirection = moveDir;
@@ -371,7 +392,6 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
         this._attackIndex = 0;
         this._savedAttack = false;
         this._isAttacking = false;
-        Debug.Log("End Atack");
     }
 
     public virtual void CauseDamage(IDamageable damageable, Vector3 attackDirection, float damage)
@@ -383,23 +403,46 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
 
     #region IDamageable
 
-    public void TakeDamage(IAttackable attackable, Vector3 attackDirection, float damage)
+    public bool TakeDamage(IAttackable attackable, Vector3 attackDirection, float damage)
     {
+        if (this._isDead) return false;
+
         this._heath = Math.Clamp(this._heath - damage, 0, this._playerModel.PlayerStats.MaxHealth);
 
-        this.HandlePain(attackDirection);
+        this.StartPain(attackDirection);
 
         if (this._heath <= 0)
         {
-            this.HandleDeath();
+            this.StartDeath();
         }
 
-        string damageStateName = this._playerModel.PlayerStats.HitForwardStateName;
+        // 
+
+        string damageStateName;
 
         bool isForwardAttackDirection = Vector3.Dot(attackDirection, this.transform.forward) >= 0;
+
         if (isForwardAttackDirection)
         {
-            damageStateName = this._playerModel.PlayerStats.HitBackwardStateName;
+            if (this._isDead)
+            {
+                damageStateName = this._playerModel.PlayerStats.DeathBackwardStateName;
+            }
+            else
+            {
+                damageStateName = this._playerModel.PlayerStats.HitBackwardStateName;
+            }
+        }
+        else
+        {
+            if (this._isDead)
+            {
+                damageStateName = this._playerModel.PlayerStats.DeathForwardStateName;
+            }
+            else
+            {
+                damageStateName = this._playerModel.PlayerStats.HitForwardStateName;
+            }
         }
 
         OnTakeDamage?.Invoke(this, new TakeDamageEventArgs
@@ -409,9 +452,10 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
             DamageStateName = damageStateName
         });
 
+        return true;
     }
 
-    public void HandlePain(Vector3 attackDirection)
+    public void StartPain(Vector3 attackDirection)
     {
         this._isPainning = true;
 
@@ -419,9 +463,22 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
         this._rigidbody.AddForce(attackDirection * this._playerModel.PlayerStats.AttackForce);
     }
 
-    public void HandleDeath()
+    public void EndPain()
+    {
+        this._isPainning = false;
+        this._rigidbody.velocity = Vector3.zero;
+    }
+
+    public void StartDeath()
     {
         this._isDead = true;
+    }
+    
+    public void EndDeath()
+    {
+        this._isDead = false;
+
+        Destroy(this.gameObject);
     }
 
     #endregion

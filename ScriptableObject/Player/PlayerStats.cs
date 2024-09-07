@@ -28,6 +28,8 @@ public class PlayerStats : ScriptableObject
     public float MaxHealth = 100;
     public String HitForwardStateName;
     public String HitBackwardStateName;
+    public String DeathForwardStateName;
+    public String DeathBackwardStateName;
 
 
 }

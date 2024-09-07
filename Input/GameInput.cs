@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Pattern.Singleton;
 
-public class GameInput : Singleton<GameInput>
+public class GameInput : RyoMonoBehaviour
 {
     public event EventHandler<bool> OnRunAction;
     public event EventHandler OnAttackAction;

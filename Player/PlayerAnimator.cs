@@ -13,10 +13,13 @@ public class PlayerAnimator : BaseView<BasePlayer>
     public event EventHandler<bool> OnPlayerAnimationChangeTrace;
     public event EventHandler OnPlayerAnimationNextAttack;
     public event EventHandler OnPlayerAnimationEndAttack;
+    public event EventHandler OnPlayerAnimationEndPain;
+    public event EventHandler OnPlayerAnimationEndDeath;
 
     [SerializeField] private Animator _animator;
     [SerializeField] private BasePlayer _player;
-    [SerializeField] private float _stateChangeTime = 0.1f;
+    [SerializeField] private float _basicStateChangeTime = 0.5f;
+    [SerializeField] private float _advancedStateChangeTime = 0.1f;
     private float _changeTimer;
 
     protected override void LoadComponents()
@@ -63,12 +66,12 @@ public class PlayerAnimator : BaseView<BasePlayer>
 
     private void Player_OnAttack(object sender, String e)
     {
-        this.PlayAnimation(e, this._stateChangeTime);
+        this.PlayAnimation(e, this._advancedStateChangeTime);
     }
 
     private void Player_OnTakeDamage(object sender, BasePlayer.TakeDamageEventArgs e)
     {
-        this.PlayAnimation(e.DamageStateName, this._stateChangeTime);
+        this.PlayAnimation(e.DamageStateName, this._advancedStateChangeTime);
     }
 
     /*
@@ -90,10 +93,10 @@ public class PlayerAnimator : BaseView<BasePlayer>
         float curernt_value = this._animator.GetFloat(AnimationString.MOVEMENT_PARAMETER_ANIM);
 
         float new_value = 0;
-        if (curernt_value != target_value && this._changeTimer <= this._stateChangeTime * 4)
+        if (curernt_value != target_value && this._changeTimer <= this._basicStateChangeTime)
         {
             this._changeTimer += Time.deltaTime;
-            new_value = Mathf.Lerp(curernt_value, target_value, this._changeTimer / this._stateChangeTime * 4);
+            new_value = Mathf.Lerp(curernt_value, target_value, this._changeTimer / this._basicStateChangeTime);
         }
         else
         {
@@ -136,6 +139,16 @@ public class PlayerAnimator : BaseView<BasePlayer>
     public void AE_EndAttack()
     {
         OnPlayerAnimationEndAttack?.Invoke(this, EventArgs.Empty);
+    }
+    
+    public void AE_EndPain()
+    {
+        OnPlayerAnimationEndPain?.Invoke(this, EventArgs.Empty);
+    }
+    
+    public void AE_EndDeath()
+    {
+        OnPlayerAnimationEndDeath?.Invoke(this, EventArgs.Empty);
     }
 
 }
