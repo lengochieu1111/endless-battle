@@ -4,6 +4,9 @@ using System.Collections;
 using System.Collections.Generic;
 using Architecture.MVC;
 using UnityEngine;
+using Unity.VisualScripting;
+
+[RequireComponent(typeof(CharacterController))]
 
 [System.Serializable]
 public class TraceTracker
@@ -32,18 +35,23 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
     [SerializeField] protected PlayerModel _playerModel;
     [SerializeField] protected PlayerAnimator _playerAnimator;
 
-    [SerializeField] protected CapsuleCollider _capsuleCollider;
-    [SerializeField] protected Rigidbody _rigidbody;
+    [SerializeField] protected CharacterController _characterController;
 
-    [Header("Check Is On Ground")]
-    [SerializeField] protected bool _isOnGround;
+    [SerializeField] protected CapsuleCollider _capsuleCollider;
+
+    [Header("Gravity")]
+    protected float _velocityY;
 
     [Header("Movement")]
     [SerializeField] protected bool _isWalking;
     [SerializeField] protected bool _isRunning;
-    [SerializeField] protected Vector3 _movementDirection;
+    protected Vector3 _movementDirection;
+    protected float _movementSpeed;
     private Vector3 _previousMovementDirection;
     private bool _hasNotified;
+
+    [Header("Rotation")]
+    private float _currentVelocity;
 
     [Header("Attack")]
     [SerializeField] protected bool _isAttacking;
@@ -58,13 +66,15 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
     [SerializeField] protected bool _isDead;
     [SerializeField] protected float _heath;
 
-    [SerializeField] protected float radius = 0.12f;
-
-
     protected override void LoadComponents()
     {
         base.LoadComponents();
 
+        if (this._characterController == null)
+        {
+            this._characterController = GetComponent<CharacterController>();
+        }
+        
         if (this._playerModel == null)
         {
             this._playerModel = GetComponentInChildren<PlayerModel>();
@@ -73,14 +83,6 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
         if (this._playerAnimator == null)
         {
             this._playerAnimator = GetComponentInChildren<PlayerAnimator>();
-        }
-
-        if (this._rigidbody == null)
-        {
-            this._rigidbody = GetComponent<Rigidbody>();
-
-            this._rigidbody.useGravity = false;
-            this._rigidbody.freezeRotation = true;
         }
 
         if (this._capsuleCollider == null)
@@ -93,8 +95,6 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
     protected override void SetupValues()
     {
         base.SetupValues();
-
-        this._isOnGround = true;
 
         this._heath = this._playerModel.PlayerStats.MaxHealth;
     }
@@ -120,15 +120,12 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
 
     private void Update()
     {
-        this.GravityDecreasing();
+        this.Update_MovementDirection();
 
+        this.HandleGravity();
+        this.HandleRotation();
         this.HandleMovement();
 
-    }
-
-    private void FixedUpdate()
-    {
-        this.CheckIsOnGround();
     }
 
     #region Action
@@ -177,37 +174,45 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
 
     #endregion
 
-    #region Check Is On Ground
+    #region Gravity
 
-    private void CheckIsOnGround()
+    private void HandleGravity()
     {
-        float bufferCheckDistance = 0.2f;
-
-        RaycastHit hit;
-        this._isOnGround = Physics.Raycast(this.transform.position, -this.transform.up, out hit, bufferCheckDistance, this._playerModel.PlayerStats.FloorLayer);
-    }
-
-    private void GravityDecreasing()
-    {
-        if (!this._isOnGround)
+        if (this._characterController.isGrounded && this._velocityY < 0.0f)
         {
-            this._rigidbody.AddForce(Physics.gravity * (this._playerModel.PlayerStats.Gravity - this._playerModel.PlayerStats.ReduceGravity) * this._rigidbody.mass);
+            this._velocityY = -1f;
         }
+        else
+        {
+            this._velocityY -= this._playerModel.PlayerStats.Gravity * this._playerModel.PlayerStats.GravityMultiplier * Time.deltaTime;
+        }
+
+        this._movementDirection.y = _velocityY;
     }
 
     #endregion
 
     #region Movement
 
-    private void HandleMovement()
+    private void Update_MovementDirection()
     {
         if (this._gameInput == null) return;
 
-        Vector2 moveInput = this._gameInput.GetMovementInputNormalize();
-        Vector3 moveDir = new Vector3(moveInput.x, 0, moveInput.y);
+        if (this._isAttacking)
+        {
+            // No movement when idle attack
+            this._movementDirection = Vector3.zero;
+        }
+        else
+        {
+            Vector2 moveInput = this._gameInput.GetMovementInputNormalize();
+            this._movementDirection = new Vector3(moveInput.x, 0, moveInput.y);
+        }
+    }
 
-        this._movementDirection = moveDir;
-
+    private void HandleMovement()
+    {
+        //
         if (!Mathf.Approximately(this._movementDirection.x, this._previousMovementDirection.x)
             || !Mathf.Approximately(this._movementDirection.z, this._previousMovementDirection.z))
         {
@@ -224,57 +229,54 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
             this._hasNotified = false;
         }
 
-        float moveSpeed = this._isRunning ? this._playerModel.PlayerStats.RunSpeed : this._playerModel.PlayerStats.WalkSpeed;
+        // 
+        this._movementSpeed = this._isRunning ? this._playerModel.PlayerStats.RunSpeed : this._playerModel.PlayerStats.WalkSpeed;
 
+        // 
         Vector3 point1 = this._capsuleCollider.bounds.center + Vector3.down * this._capsuleCollider.height / 2;
         Vector3 point2 = this._capsuleCollider.bounds.center + Vector3.up * this._capsuleCollider.height / 2;
         float radius = this._capsuleCollider.radius;
         float moveDistance = 0.1f;
 
-        bool canMove = !Physics.CapsuleCast(point1, point2, radius, moveDir, moveDistance);
+        bool canMove = !Physics.CapsuleCast(point1, point2, radius, this._movementDirection, moveDistance);
 
         if (!canMove)
         {
-            Vector3 moveDirX = new Vector3(moveDir.x, 0, 0).normalized;
+            Vector3 moveDirX = new Vector3(this._movementDirection.x, 0, 0).normalized;
             canMove = moveDirX.x != 0 && !Physics.CapsuleCast(point1, point2, radius, moveDirX, moveDistance);
             if (canMove)
             {
-                moveDir = moveDirX;
+                this._movementDirection = moveDirX;
             }
             else
             {
-                Vector3 moveDirZ = new Vector3(0, 0, moveDir.z).normalized;
+                Vector3 moveDirZ = new Vector3(0, 0, this._movementDirection.z).normalized;
                 canMove = moveDirZ.z != 0 && !Physics.CapsuleCast(point1, point2, radius, moveDirZ, moveDistance);
                 if (canMove)
                 {
-                    moveDir = moveDirZ;
+                    this._movementDirection = moveDirZ;
                 }
             }
         }
 
-        // No movement when idle attack
-        if (this._isAttacking)
-        {
-            canMove = false;
-            // moveDir = Vector3.zero;
-        }
+        this._isWalking = this._movementDirection.x != 0 || this._movementDirection.z != 0;
 
-        this._isWalking = moveDir != Vector3.zero;
+        this._characterController.Move(this._movementDirection * this._movementSpeed * Time.deltaTime);
 
-        // Move handling
-        if (canMove)
-        {
-            this._rigidbody.velocity = moveDir * moveSpeed * Time.deltaTime;
-        }
-        else
-        {
-            this._rigidbody.velocity = Vector3.zero;
-        }
+    }
 
-        // Rotate handling
-        if (!this._isAttacking)
+    #endregion
+
+    #region Rotation
+
+    private void HandleRotation()
+    {
+        bool canRotate = !this._isAttacking && (this._movementDirection.x != 0 || this._movementDirection.z != 0);
+        if (canRotate)
         {
-            this.transform.forward = Vector3.Slerp(this.transform.forward, moveDir, this._playerModel.PlayerStats.RotationSpeed * Time.deltaTime);
+            float targetAngle = Mathf.Atan2(this._movementDirection.x, this._movementDirection.z) * Mathf.Rad2Deg;
+            float angle = Mathf.SmoothDampAngle(this.transform.eulerAngles.y, targetAngle, ref _currentVelocity, this._playerModel.PlayerStats.SmoothTime);
+            this.transform.rotation = Quaternion.Euler(0, angle, 0);
         }
     }
 
@@ -288,7 +290,7 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
         {
             foreach (TraceTracker traceTracker in this._traceTracker)
             {
-                DrawCylinderBetweenPoints(traceTracker.StartTrace.position, traceTracker.EndTrace.position, radius);
+                DrawCylinderBetweenPoints(traceTracker.StartTrace.position, traceTracker.EndTrace.position, this._playerModel.PlayerStats.WeaponColliderRadius);
             }
         }
 
@@ -460,13 +462,13 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
         this._isPainning = true;
 
         attackDirection.y += 1;
-        this._rigidbody.AddForce(attackDirection * this._playerModel.PlayerStats.AttackForce);
+        // this._rigidbody.AddForce(attackDirection * this._playerModel.PlayerStats.AttackForce);
     }
 
     public void EndPain()
     {
         this._isPainning = false;
-        this._rigidbody.velocity = Vector3.zero;
+        // this._rigidbody.velocity = Vector3.zero;
     }
 
     public void StartDeath()

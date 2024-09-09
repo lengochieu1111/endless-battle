@@ -7,15 +7,15 @@ using UnityEngine;
 
 public class PlayerStats : ScriptableObject
 {
-    [Header("Movement")]
-    public float ReduceGravity = 0.2f;
-    public float Gravity = 40f;
-    public LayerMask FloorLayer;
+    [Header("Gravity")]
+    public float Gravity = 9.81f;
+    public float GravityMultiplier = 3f;
 
     [Header("Movement")]
-    public float WalkSpeed = 100f;
-    public float RunSpeed = 200f;
-    public float RotationSpeed = 15f;
+    public float WalkSpeed = 6f;
+    public float RunSpeed = 10f;
+    public float RotationSpeed = 5f;
+    public float SmoothTime = 0.2f;
 
     [Header("Attack")]
     public LayerMask PlayerLayer;

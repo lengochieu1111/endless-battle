@@ -139,6 +139,7 @@ public class PlayerAnimator : BaseView<BasePlayer>
     public void AE_EndAttack()
     {
         OnPlayerAnimationEndAttack?.Invoke(this, EventArgs.Empty);
+        Debug.Log("End Attack");
     }
     
     public void AE_EndPain()
