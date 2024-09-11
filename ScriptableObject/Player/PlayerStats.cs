@@ -19,17 +19,28 @@ public class PlayerStats : ScriptableObject
 
     [Header("Attack")]
     public LayerMask PlayerLayer;
-    public String[] AttackStateNameArray;
+    public string[] AttackStateNameArray;
     public float WeaponColliderRadius = 0.12f;
+    public float WeaponSpeed = 20f;
     public float Damage = 50;
     public float AttackForce = 400;
 
     [Header("Health")]
     public float MaxHealth = 100;
-    public String HitForwardStateName;
-    public String HitBackwardStateName;
-    public String DeathForwardStateName;
-    public String DeathBackwardStateName;
+    public string HitForwardStateName;
+    public string HitBackwardStateName;
+    public string DeathForwardStateName;
+    public string DeathBackwardStateName;
+
+    [Header("Sound")]
+    public AudioClip FootstepLeftSound;
+    public AudioClip FootstepRightSound;
+    public AudioClip[] WeaponAttackSound;
+    public AudioClip[] WeaponHitSound;
+    public AudioClip PlayerHitSound;
+    public AudioClip PlayerDeathSound;
+
+
 
 
 }

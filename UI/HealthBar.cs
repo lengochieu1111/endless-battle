@@ -18,9 +18,8 @@ public class HealthBar : RyoMonoBehaviour
 
         if (this._healthBarImage == null)
         {
-            this._healthBarImage = GetComponent<Image>();
-
-            this._healthBarImage.color = Color.red;
+            Transform healthBarTransform = this.transform.Find("HealthBarImage");
+            this._healthBarImage = healthBarTransform.GetComponent<Image>();
         }
 
     }

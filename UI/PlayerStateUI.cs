@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class PlayerState_UICanvas : RyoMonoBehaviour
+public class PlayerStateUI : RyoMonoBehaviour
 {
     [SerializeField] private BasePlayer _player;
     [SerializeField] private HealthBar _healthBar;

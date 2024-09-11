@@ -16,8 +16,10 @@ public class PlayerAnimator : BaseView<BasePlayer>
     public event EventHandler OnPlayerAnimationEndPain;
     public event EventHandler OnPlayerAnimationEndDeath;
 
+    public event EventHandler OnPlayerAnimationPlayFoodstepLeftSound;
+    public event EventHandler OnPlayerAnimationPlayFoodstepRightSound;
+
     [SerializeField] private Animator _animator;
-    [SerializeField] private BasePlayer _player;
     [SerializeField] private float _basicStateChangeTime = 0.5f;
     [SerializeField] private float _advancedStateChangeTime = 0.1f;
     private float _changeTimer;
@@ -30,34 +32,23 @@ public class PlayerAnimator : BaseView<BasePlayer>
         {
             this._animator = GetComponent<Animator>();
         }
-        
-        if (this._player == null)
-        {
-            this._player = GetComponentInParent<BasePlayer>();
-        }
-
     }
 
     protected override void Start()
     {
         base.Start();
 
-        this._player.OnChangeDirection += Player_OnChangeDirection; ;
-        this._player.OnAttack += Player_OnAttack;
-        this._player.OnTakeDamage += Player_OnTakeDamage;
+        this.controller.OnChangeDirection += Player_OnChangeDirection; ;
+        this.controller.OnAttack += Player_OnAttack;
+        this.controller.OnTakeDamage += Player_OnTakeDamage;
     }
-
-
 
     private void Update()
     {
         this.Update_MovementParameter();
-
     }
 
-    /*
-     * 
-     */
+    #region Event Action
 
     private void Player_OnChangeDirection(object sender, EventArgs e)
     {
@@ -74,6 +65,8 @@ public class PlayerAnimator : BaseView<BasePlayer>
         this.PlayAnimation(e.DamageStateName, this._advancedStateChangeTime);
     }
 
+    #endregion
+
     /*
      * 
      */
@@ -81,10 +74,10 @@ public class PlayerAnimator : BaseView<BasePlayer>
     private void Update_MovementParameter()
     {
         float target_value = MIN_PARAMETER;
-        if (this._player.GetIsWalking())
+        if (this.controller.GetIsWalking())
         {
             target_value = MIDDLE_PARAMETER;
-            if (this._player.GetIsRunning())
+            if (this.controller.GetIsRunning())
             {
                 target_value = MAX_PARAMETER;
             }
@@ -139,7 +132,6 @@ public class PlayerAnimator : BaseView<BasePlayer>
     public void AE_EndAttack()
     {
         OnPlayerAnimationEndAttack?.Invoke(this, EventArgs.Empty);
-        Debug.Log("End Attack");
     }
     
     public void AE_EndPain()
@@ -150,6 +142,20 @@ public class PlayerAnimator : BaseView<BasePlayer>
     public void AE_EndDeath()
     {
         OnPlayerAnimationEndDeath?.Invoke(this, EventArgs.Empty);
+    }
+
+    /*
+     * Sound
+     */
+
+    public void AE_PlayFoodstepLeftSound()
+    {
+        OnPlayerAnimationPlayFoodstepLeftSound?.Invoke(this, EventArgs.Empty);
+    }
+    
+    public void AE_PlayFoodstepRightSound()
+    {
+        OnPlayerAnimationPlayFoodstepRightSound?.Invoke(this, EventArgs.Empty);
     }
 
 }

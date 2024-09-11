@@ -88,7 +88,11 @@ namespace Pattern.ObjectPooling
             return null;
         }
 
-        public virtual void Destroy(Transform obj)
+        /*
+         * 
+         */
+
+        public virtual void DestroyObjectPooling(Transform obj)
         {
             if (this._poobObjects.Contains(obj)) return;
 

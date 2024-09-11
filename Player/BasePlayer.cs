@@ -32,12 +32,7 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
     [SerializeField] private GameInput _gameInput;
 
     [Header("Components")]
-    [SerializeField] protected PlayerModel _playerModel;
-    [SerializeField] protected PlayerAnimator _playerAnimator;
-
     [SerializeField] protected CharacterController _characterController;
-
-    [SerializeField] protected CapsuleCollider _capsuleCollider;
 
     [Header("Gravity")]
     protected float _velocityY;
@@ -74,29 +69,13 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
         {
             this._characterController = GetComponent<CharacterController>();
         }
-        
-        if (this._playerModel == null)
-        {
-            this._playerModel = GetComponentInChildren<PlayerModel>();
-        }
-
-        if (this._playerAnimator == null)
-        {
-            this._playerAnimator = GetComponentInChildren<PlayerAnimator>();
-        }
-
-        if (this._capsuleCollider == null)
-        {
-            this._capsuleCollider = GetComponent<CapsuleCollider>();
-        }
-
     }
 
     protected override void SetupValues()
     {
         base.SetupValues();
 
-        this._heath = this._playerModel.PlayerStats.MaxHealth;
+        this._heath = this.model.PlayerStats.MaxHealth;
     }
 
     protected override void Start()
@@ -109,12 +88,15 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
             this._gameInput.OnAttackAction += GameInput_OnAttackAction;
         }
 
-        this._playerAnimator.OnPlayerAnimationChangeTrace += PlayerAnimator_OnPlayerAnimationChangeTrace;
-        this._playerAnimator.OnPlayerAnimationNextAttack += PlayerAnimator_OnPlayerAnimationNextAttack;
-        this._playerAnimator.OnPlayerAnimationEndAttack += PlayerAnimator_OnPlayerAnimationEndAttack;
+        this.view.OnPlayerAnimationChangeTrace += PlayerAnimator_OnPlayerAnimationChangeTrace;
+        this.view.OnPlayerAnimationNextAttack += PlayerAnimator_OnPlayerAnimationNextAttack;
+        this.view.OnPlayerAnimationEndAttack += PlayerAnimator_OnPlayerAnimationEndAttack;
 
-        this._playerAnimator.OnPlayerAnimationEndPain += PlayerAnimator_OnPlayerAnimationEndPain;
-        this._playerAnimator.OnPlayerAnimationEndDeath += PlayerAnimator_OnPlayerAnimationEndDeath; ;
+        this.view.OnPlayerAnimationEndPain += PlayerAnimator_OnPlayerAnimationEndPain;
+        this.view.OnPlayerAnimationEndDeath += PlayerAnimator_OnPlayerAnimationEndDeath;
+
+        this.view.OnPlayerAnimationPlayFoodstepLeftSound += PlayerAnimator_OnPlayerAnimationPlayFoodstepLeftSound;
+        this.view.OnPlayerAnimationPlayFoodstepRightSound += PlayerAnimator_OnPlayerAnimationPlayFoodstepRightSound; ;
 
     }
 
@@ -172,19 +154,29 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
         this.EndDeath();
     }
 
+    private void PlayerAnimator_OnPlayerAnimationPlayFoodstepLeftSound(object sender, EventArgs e)
+    {
+        this.PlayFootstepLeftSound();
+    }
+
+    private void PlayerAnimator_OnPlayerAnimationPlayFoodstepRightSound(object sender, EventArgs e)
+    {
+        this.PlayFootstepRightSound();
+    }
+
     #endregion
 
     #region Gravity
 
     private void HandleGravity()
     {
-        if (this._characterController.isGrounded && this._velocityY < 0.0f)
+        if (this._characterController.isGrounded && this._velocityY < 0f)
         {
-            this._velocityY = -1f;
+            this._velocityY = 0f;
         }
         else
         {
-            this._velocityY -= this._playerModel.PlayerStats.Gravity * this._playerModel.PlayerStats.GravityMultiplier * Time.deltaTime;
+            this._velocityY -= this.model.PlayerStats.Gravity * this.model.PlayerStats.GravityMultiplier * Time.deltaTime;
         }
 
         this._movementDirection.y = _velocityY;
@@ -230,12 +222,12 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
         }
 
         // 
-        this._movementSpeed = this._isRunning ? this._playerModel.PlayerStats.RunSpeed : this._playerModel.PlayerStats.WalkSpeed;
+        this._movementSpeed = this._isRunning ? this.model.PlayerStats.RunSpeed : this.model.PlayerStats.WalkSpeed;
 
         // 
-        Vector3 point1 = this._capsuleCollider.bounds.center + Vector3.down * this._capsuleCollider.height / 2;
-        Vector3 point2 = this._capsuleCollider.bounds.center + Vector3.up * this._capsuleCollider.height / 2;
-        float radius = this._capsuleCollider.radius;
+        Vector3 point1 = this._characterController.center + Vector3.down * this._characterController.height / 2;
+        Vector3 point2 = this._characterController.center + Vector3.up * this._characterController.height / 2;
+        float radius = this._characterController.radius;
         float moveDistance = 0.1f;
 
         bool canMove = !Physics.CapsuleCast(point1, point2, radius, this._movementDirection, moveDistance);
@@ -275,7 +267,7 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
         if (canRotate)
         {
             float targetAngle = Mathf.Atan2(this._movementDirection.x, this._movementDirection.z) * Mathf.Rad2Deg;
-            float angle = Mathf.SmoothDampAngle(this.transform.eulerAngles.y, targetAngle, ref _currentVelocity, this._playerModel.PlayerStats.SmoothTime);
+            float angle = Mathf.SmoothDampAngle(this.transform.eulerAngles.y, targetAngle, ref _currentVelocity, this.model.PlayerStats.SmoothTime);
             this.transform.rotation = Quaternion.Euler(0, angle, 0);
         }
     }
@@ -290,7 +282,7 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
         {
             foreach (TraceTracker traceTracker in this._traceTracker)
             {
-                DrawCylinderBetweenPoints(traceTracker.StartTrace.position, traceTracker.EndTrace.position, this._playerModel.PlayerStats.WeaponColliderRadius);
+                DrawCylinderBetweenPoints(traceTracker.StartTrace.position, traceTracker.EndTrace.position, this.model.PlayerStats.WeaponColliderRadius);
             }
         }
 
@@ -315,12 +307,6 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
 
     #region IAttackable
 
-    public virtual void Attack()
-    {
-        OnAttack?.Invoke(this, this._playerModel.PlayerStats.AttackStateNameArray[this._attackIndex]);
-        this._attackIndex = (this._attackIndex + 1) % this._playerModel.PlayerStats.AttackStateNameArray.Length;
-    }
-
     public virtual void RequestAttack()
     {
         if (this._isAttacking)
@@ -333,6 +319,12 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
 
             this.Attack();
         }
+    }
+
+    public virtual void Attack()
+    {
+        OnAttack?.Invoke(this, this.model.PlayerStats.AttackStateNameArray[this._attackIndex]);
+        this._attackIndex = (this._attackIndex + 1) % this.model.PlayerStats.AttackStateNameArray.Length;
     }
 
     public virtual void StartAttack()
@@ -354,6 +346,9 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
     {
         this._collidersDidDamage.Clear();
         this._isTracing = true;
+
+        this.PlayWeaponAttackSound();
+
     }
 
     public virtual void Tracing()
@@ -362,11 +357,12 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
         {
             foreach (TraceTracker traceTracker in this._traceTracker)
             {
-                Collider[] hitColliders = Physics.OverlapCapsule(traceTracker.StartTrace.position, traceTracker.EndTrace.position, this._playerModel.PlayerStats.WeaponColliderRadius, this._playerModel.PlayerStats.PlayerLayer);
+                Collider[] hitColliders = Physics.OverlapCapsule(traceTracker.StartTrace.position, 
+                    traceTracker.EndTrace.position, this.model.PlayerStats.WeaponColliderRadius, this.model.PlayerStats.PlayerLayer);
 
                 foreach (Collider collider in hitColliders)
                 {
-                    if (this._collidersDidDamage.Contains(collider) || collider == this._capsuleCollider)
+                    if (this._collidersDidDamage.Contains(collider) || collider == this._characterController)
                     {
                         continue;
                     }
@@ -375,7 +371,7 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
                         if (collider.TryGetComponent<IDamageable>(out IDamageable damageable))
                         {
                             Vector3 attackDirection = (collider.transform.position - this.transform.position).normalized;
-                            this.CauseDamage(damageable, attackDirection, this._playerModel.PlayerStats.Damage);
+                            this.CauseDamage(damageable, attackDirection, this.model.PlayerStats.Damage);
                             this._collidersDidDamage.Add(collider);
                         }
                     }
@@ -399,6 +395,8 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
     public virtual void CauseDamage(IDamageable damageable, Vector3 attackDirection, float damage)
     {
         damageable.TakeDamage(this, attackDirection, damage);
+
+        this.PlayWeaponHitSound();
     }
 
     #endregion
@@ -409,7 +407,7 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
     {
         if (this._isDead) return false;
 
-        this._heath = Math.Clamp(this._heath - damage, 0, this._playerModel.PlayerStats.MaxHealth);
+        this._heath = Math.Clamp(this._heath - damage, 0, this.model.PlayerStats.MaxHealth);
 
         this.StartPain(attackDirection);
 
@@ -428,29 +426,29 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
         {
             if (this._isDead)
             {
-                damageStateName = this._playerModel.PlayerStats.DeathBackwardStateName;
+                damageStateName = this.model.PlayerStats.DeathBackwardStateName;
             }
             else
             {
-                damageStateName = this._playerModel.PlayerStats.HitBackwardStateName;
+                damageStateName = this.model.PlayerStats.HitBackwardStateName;
             }
         }
         else
         {
             if (this._isDead)
             {
-                damageStateName = this._playerModel.PlayerStats.DeathForwardStateName;
+                damageStateName = this.model.PlayerStats.DeathForwardStateName;
             }
             else
             {
-                damageStateName = this._playerModel.PlayerStats.HitForwardStateName;
+                damageStateName = this.model.PlayerStats.HitForwardStateName;
             }
         }
 
         OnTakeDamage?.Invoke(this, new TakeDamageEventArgs
         {
             Health = this._heath,
-            MaxHealth = this._playerModel.PlayerStats.MaxHealth,
+            MaxHealth = this.model.PlayerStats.MaxHealth,
             DamageStateName = damageStateName
         });
 
@@ -460,22 +458,20 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
     public void StartPain(Vector3 attackDirection)
     {
         this._isPainning = true;
-
-        attackDirection.y += 1;
-        // this._rigidbody.AddForce(attackDirection * this._playerModel.PlayerStats.AttackForce);
+        this.PlayPlayerHitSound();
     }
 
     public void EndPain()
     {
         this._isPainning = false;
-        // this._rigidbody.velocity = Vector3.zero;
     }
 
     public void StartDeath()
     {
         this._isDead = true;
+        this.PlayPlayerDeathSound();
     }
-    
+
     public void EndDeath()
     {
         this._isDead = false;
@@ -483,6 +479,41 @@ public class BasePlayer : BaseController<PlayerModel, PlayerAnimator>, IAttackab
         Destroy(this.gameObject);
     }
 
+    #endregion
+
+
+    #region Sound
+
+    protected virtual void PlayFootstepLeftSound()
+    {
+        SoundFXManager.PlaySoundFXClip(this.model.PlayerStats.FootstepLeftSound, this.transform, 1f);
+    }
+
+    protected virtual void PlayFootstepRightSound()
+    {
+        SoundFXManager.PlaySoundFXClip(this.model.PlayerStats.FootstepRightSound, this.transform, 1f);
+    }
+
+    protected virtual void PlayWeaponAttackSound()
+    {
+        SoundFXManager.PlaySoundFXClip(this.model.PlayerStats.WeaponAttackSound[this._attackIndex], this.transform, 1f);
+    }
+
+    protected virtual void PlayWeaponHitSound()
+    {
+        SoundFXManager.PlaySoundFXClip(this.model.PlayerStats.WeaponHitSound[this._attackIndex], this.transform, 1f);
+    }
+    
+    protected virtual void PlayPlayerHitSound()
+    {
+        SoundFXManager.PlaySoundFXClip(this.model.PlayerStats.PlayerHitSound, this.transform, 1f);
+    }
+
+    protected virtual void PlayPlayerDeathSound()
+    {
+        SoundFXManager.PlaySoundFXClip(this.model.PlayerStats.PlayerDeathSound, this.transform, 1f);
+    }
+    
     #endregion
 
     #region Setter Gettter
